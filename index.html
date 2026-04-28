@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matrix | Global Ops Center</title>
+    <style>
+        :root {
+            --neon-blue: #00f2ff;
+            --dark-black: #050505;
+            --surface-color: #121212;
+            --border-color: #2a2a2a;
+            --text-main: #e0e0e0;
+            --text-dim: #888;
+        }
+
+        body {
+            background-color: var(--dark-black);
+            color: var(--text-main);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            margin: 0;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        h1 {
+            font-weight: 200;
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            color: var(--neon-blue);
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .search-wrapper {
+            position: relative;
+            margin-bottom: 40px;
+        }
+
+        input {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            padding: 15px 30px;
+            width: 400px;
+            border-radius: 4px;
+            color: var(--neon-blue);
+            font-size: 18px;
+            text-align: center;
+            letter-spacing: 3px;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        input:focus {
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 20px rgba(0, 242, 255, 0.15);
+        }
+
+        table {
+            width: 100%;
+            max-width: 1400px;
+            border-collapse: collapse;
+            background: var(--surface-color);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th {
+            background: #1a1a1a;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 2px;
+            padding: 20px;
+            text-align: left;
+            border-bottom: 2px solid var(--dark-black);
+        }
+
+        td {
+            padding: 18px 20px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        tr:last-child td { border-bottom: none; }
+
+        .dest-row {
+            background: rgba(0, 242, 255, 0.03);
+        }
+
+        .dest-row td:nth-child(2) {
+            color: var(--neon-blue);
+            font-weight: bold;
+        }
+
+        .prio-tag {
+            background: #222;
+            color: #fff;
+            padding: 4px 10px;
+            border-radius: 3px;
+            font-size: 11px;
+            border: 1px solid #444;
+        }
+
+        .no-data {
+            padding: 40px;
+            text-align: center;
+            color: var(--text-dim);
+            letter-spacing: 1px;
+        }
+
+        /* Responsive UI */
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            input { width: 90%; }
+            table { font-size: 11px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>ULS ALTERNATE AD TEST</h1>
+    </div>
+
+    <div class="search-wrapper">
+        <input type="text" id="icaoSearch" onkeyup="filterTable()" placeholder="ICAO SEARCH...">
+    </div>
+
+    <table id="matrixTable">
+        <thead>
+            <tr>
+                <th>DESTINATION</th>
+                <th>AIRPORT</th>
+                <th>TYPE</th>
+                <th>PRIORITY</th>
+                <th>LIMITS</th>
+                <th>OP HOURS</th>
+                <th>CURFEW</th>
+                <th>NOISE</th>
+            </tr>
+        </thead>
+        <tbody id="tableContent">
+            </tbody>
+    </table>
+
+<script>
+    // Balım, senin için tüm listeyi buraya tek tek işledim:
+    const rawData = [
+        ["LTFM", "LTFM", "DEST", "-", "-", "24H", "YOK", "-"],
+        ["LTFM", "LTBJ", "ALTN", "1", "-", "24H", "YOK", "-"],
+        ["LTFM", "LTBU", "ALTN", "2", "-", "24H", "YOK", "-"],
+        ["LTFM", "LTAC", "ALTN", "3", "-", "24H", "YOK", "-"],
+        ["LGAV", "LGAV", "DEST", "-", "-", "24H", "YOK", "-"],
+        ["LGAV", "LTBJ", "ALTN", "1", "-", "24H", "YOK", "-"],
+        ["LGAV", "LTFM", "ALTN", "2", "-", "24H", "YOK", "-"],
+        ["LGAV", "LTFE", "ALTN", "3", "-", "24H", "YOK", "-"],
+        ["DTTA", "DTTA", "DEST", "-", "-", "24H", "YOK", "-"],
+        ["DTTA", "DTNH", "ALTN", "1", "-", "24H", "YOK", "-"],
+        ["DTTA", "DTTJ", "ALTN", "2", "-", "24H", "YOK", "-"],
+        ["DTTA", "DTMB", "ALTN", "3", "-", "24H", "YOK", "-"],
+        ["DTTA", "DTTX", "ALTN", "4", "-", "24H", "YOK", "-"],
+        ["LHBP", "LHBP", "DEST", "-", "-", "24H", "YOK", "-"],
+        ["LHBP", "LOWL", "ALTN", "1", "-", "S:Mon-Fri 0330 / Sat-Sun 0400-2100 UTC | W:Mon-Fri 0430 / Sat-Sun 0500-2200 UTC", "-", "-"],
+        ["LHBP", "LKPR", "ALTN", "2", "-", "24H", "YOK", "-"],
+        ["LHBP", "LZIB", "ALTN", "3", "-", "24H", "YOK", "-"],
+        ["LHBP", "LDZA", "ALTN", "4", "-", "S:0330-2330 / W:0430-0030 UTC", "S:2330-0330 / W:0030-0430", "-"],
+        ["LHBP", "LOWW", "ALTN", "5", "-", "24H", "YOK", "-"],
+        ["LIMC", "LIMC", "DEST", "-", "-", "24H", "YOK", "-"],
+        ["LIMC", "LIRF", "ALTN", "1", "-", "24H", "YOK", "-"],
+        ["LIMC", "LIME", "ALTN", "2", "-", "24H", "YOK", "-"],
+        ["LIMC", "LIMJ", "ALTN", "3", "-", "24H", "YOK", "-"],
+        ["LIMC", "LSZH", "ALTN", "4", "-", "S:0400-2100 / W:0500-2200", "S:2100-0400 / W:2200-0500", "-"],
+        ["LIMC", "LIMF", "ALTN", "5", "-", "S:0400-2100 / W:0500-2200", "S:2100-0400 / W:2200-0500", "-"],
+        ["LIMC", "LIPE", "ALTN", "6", "-", "24H", "YOK", "-"],
+        ["ORBI", "ORBI", "DEST", "-", "-", "24H", "YOK", "-"],
+        ["ORBI", "LTCC", "ALTN", "1", "-", "24H", "YOK", "-"],
+        ["ORBI", "LTCA", "ALTN", "2", "-", "24H", "YOK", "-"],
+        ["ORBI", "LTAT", "ALTN", "3", "-", "24H", "YOK", "-"],
+        ["LKPR", "LKPR", "DEST", "-", "-", "24H", "YOK", "-"],
+        ["LKPR", "LHBP", "ALTN", "1", "-", "24H", "YOK", "-"],
+        ["LKPR", "LOWL", "ALTN", "2", "-", "S:0330-2100 / W:0430-2200", "YOK", "-"],
+        ["LKPR", "LZIB", "ALTN", "3", "-", "24H", "YOK", "-"],
+        ["GMMN", "GMMN", "DEST", "-", "-", "24H", "YOK", "-"],
+        ["GMMN", "GMMX", "ALTN", "1", "-", "24H", "YOK", "-"],
+        ["GMMN", "GMME", "ALTN", "2", "-", "24H", "YOK", "-"],
+        ["EYVI", "EYVI", "DEST", "-", "-", "24H", "YOK", "-"],
+        ["EYVI", "EPWA", "ALTN", "1", "-", "24H", "YOK", "-"],
+        ["EYVI", "EFHK", "ALTN", "2", "-", "24H", "YOK", "-"],
+        ["EYVI", "EVRA", "ALTN", "3", "-", "24H", "YOK", "-"],
+        ["DAAG", "DAAG", "DEST", "-", "-", "24H", "YOK", "-"],
+        ["DAAG", "DAOO", "ALTN", "1", "-", "24H", "YOK", "-"],
+        ["DAAG", "DABC", "ALTN", "2", "-", "24H", "YOK", "-"],
+        ["LFSB", "LFSB", "DEST", "-", "-", "S:0300/0400-2200 / W:0500-2300", "S:2200-0300/0400 / W:2300-0500", "-"],
+        ["LFSB", "LIMC", "ALTN", "1", "-", "24H", "YOK", "-"],
+        ["LFSB", "LSZH", "ALTN", "2", "-", "S:0400-2100 / W:0500-2200", "VAR", "-"],
+        ["LFSB", "EDDS", "ALTN", "3", "-", "S:0400-2059/2159 / W:0500-2159/2259", "VAR", "-"],
+        ["ORER", "ORER", "DEST", "-", "-", "24H", "YOK", "-"],
+        ["ORER", "LTCC", "ALTN", "1", "-", "24H", "YOK", "-"],
+        ["ORER", "LTCA", "ALTN", "2", "-", "24H", "YOK", "-"],
+        ["ORER", "LTAT", "ALTN", "3", "-", "24H", "YOK", "-"],
+        ["EHAM", "EHAM", "DEST", "-", "-", "24H", "YOK", "-"],
+        ["EHAM", "EBBR", "ALTN", "1", "-", "24H", "YOK", "-"],
+        ["EHAM", "EBLG", "ALTN", "2", "-", "24H", "YOK", "-"],
+        ["EHAM", "EDDK", "ALTN", "3", "-", "24H", "YOK", "-"],
+        ["EHAM", "EHBK", "ALTN", "4", "-", "S:2100-0400 / W:2200-0500", "VAR", "-"],
+        ["LOWL", "LOWL", "DEST", "-", "-", "S:0330-2100 / W:0430-2200", "VAR", "-"],
+        ["LOWL", "LHBP", "ALTN", "1", "-", "24H", "YOK", "-"],
+        ["LOWL", "LKPR", "ALTN", "2", "-", "24H", "YOK", "-"],
+        ["LOWL", "LZIB", "ALTN", "3", "-", "24H", "YOK", "-"],
+        ["LOWL", "LOWW", "ALTN", "4", "-", "24H", "YOK", "-"],
+        ["ENGM", "ENGM", "DEST", "-", "-", "24H", "YOK", "-"],
+        ["ENGM", "EKCH", "ALTN", "1", "-", "24H", "YOK", "-"],
+        ["ENGM", "ESSA", "ALTN", "2", "-", "24H", "YOK", "-"],
+        ["ENGM", "EKBI", "ALTN", "3", "-", "24H", "YOK", "-"],
+        ["EKCH", "EKCH", "DEST", "-", "-", "24H", "YOK", "-"],
+        ["EKCH", "ESSA", "ALTN", "1", "-", "24H", "YOK", "-"],
+        ["EKCH", "ESMS", "ALTN", "2", "-", "24H", "YOK", "-"],
+        ["EKCH", "EKBI", "ALTN", "3", "-", "24H", "YOK", "-"],
+        ["LYBE", "LYBE", "DEST", "-", "-", "24H", "YOK", "-"],
+        ["LYBE", "LHBP", "ALTN", "1", "-", "24H", "YOK", "-"],
+        ["LYBE", "LDZA", "ALTN", "2", "-", "S:0330-2330 / W:0430-0030", "VAR", "-"],
+        ["LYBE", "LTFM", "ALTN", "3", "-", "24H", "YOK", "-"],
+        ["LYBE", "LTBU", "ALTN", "4", "-", "24H", "YOK", "-"],
+        ["LFPG", "LFPG", "DEST", "-", "-", "S:0300-2200 / W:0400-2300", "VAR", "-"],
+        ["LFPG", "LFPO", "ALTN", "1", "-", "S:0400-2115 / W:0500-2215", "VAR", "-"],
+        ["LFPG", "EBBR", "ALTN", "2", "-", "24H", "YOK", "-"],
+        ["LFPG", "EDDK", "ALTN", "3", "-", "24H", "YOK", "-"],
+        ["LFPG", "EBLG", "ALTN", "4", "-", "24H", "YOK", "-"],
+        ["HLLM", "HLLM", "DEST", "-", "-", "SUNRISE-SUNSET", "SUNSET-SUNRISE", "-"],
+        ["HLLM", "DTTJ", "ALTN", "1", "-", "24H", "YOK", "-"],
+        ["HLLM", "DTTX", "ALTN", "2", "-", "24H", "YOK", "-"],
+        ["HLLM", "DTTA", "ALTN", "3", "-", "24H", "YOK", "-"],
+        ["LEBL", "LEBL", "DEST", "-", "-", "24H", "YOK", "-"],
+        ["LEBL", "LEMD", "ALTN", "1", "-", "24H", "YOK", "-"],
+        ["LEBL", "LEVC", "ALTN", "2", "-", "24H", "YOK", "-"],
+        ["EFHK", "EFHK", "DEST", "-", "-", "24H", "YOK", "-"],
+        ["EFHK", "ESSA", "ALTN", "1", "-", "24H", "YOK", "-"],
+        ["EFHK", "EETN", "ALTN", "2", "-", "24H", "YOK", "-"],
+        ["EFHK", "EYVI", "ALTN", "3", "-", "24H", "YOK", "-"],
+        ["EDDF", "EDDF", "DEST", "-", "-", "S:0300-2100 / W:0400-2200", "VAR", "-"],
+        ["EDDF", "EDDK", "ALTN", "1", "-", "24H", "YOK", "-"],
+        ["EDDF", "EBBR", "ALTN", "2", "-", "24H", "YOK", "-"],
+        ["EDDF", "EBLG", "ALTN", "3", "-", "24H", "YOK", "-"],
+        ["EDDF", "EDDS", "ALTN", "4", "-", "S:0400-2100 / W:0500-2200", "VAR", "-"],
+        ["EDDF", "EHAM", "ALTN", "5", "-", "24H", "YOK", "-"],
+        ["UBBB", "UBBB", "DEST", "-", "-", "24H", "YOK", "-"],
+        ["UBBB", "UGTB", "ALTN", "1", "-", "24H", "YOK", "-"],
+        ["LMML", "LMML", "DEST", "-", "-", "24H", "YOK", "-"],
+        ["LMML", "DTTA", "ALTN", "1", "-", "24H", "YOK", "-"],
+        ["LMML", "DTTJ", "ALTN", "2", "-", "24H", "YOK", "-"],
+        ["EBLG", "EBLG", "DEST", "-", "-", "24H", "YOK", "-"],
+        ["EBLG", "EBBR", "ALTN", "1", "-", "24H", "YOK", "-"],
+        ["EBLG", "EDDK", "ALTN", "2", "-", "24H", "YOK", "-"],
+        ["EBLG", "EHAM", "ALTN", "3", "-", "24H", "YOK", "-"],
+        ["EBLG", "EHBK", "ALTN", "4", "-", "VAR", "VAR", "-"],
+        ["EBBR", "EBBR", "DEST", "-", "-", "24H", "YOK", "-"],
+        ["EBBR", "EHAM", "ALTN", "1", "-", "24H", "YOK", "-"],
+        ["EBBR", "EBLG", "ALTN", "2", "-", "24H", "YOK", "-"],
+        ["EBBR", "EDDK", "ALTN", "3", "-", "24H", "YOK", "-"],
+        ["EBBR", "EHBK", "ALTN", "4", "-", "VAR", "VAR", "-"],
+        ["HECA", "HECA", "DEST", "-", "-", "24H", "YOK", "-"],
+        ["HECA", "HESH", "ALTN", "1", "-", "24H", "YOK", "-"],
+        ["HECA", "HEAX", "ALTN", "2", "-", "-", "-", "-"],
+        ["HECA", "HELX", "ALTN", "3", "-", "24H", "YOK", "-"],
+        ["LSZH", "LSZH", "DEST", "-", "-", "S:0400-2100 / W:0500-2200", "VAR", "-"],
+        ["LSZH", "LIMC", "ALTN", "1", "-", "24H", "YOK", "-"],
+        ["LSZH", "LFSB", "ALTN", "2", "-", "S:0300/0400-2200", "VAR", "-"],
+        ["LSZH", "EDDS", "ALTN", "3", "-", "S:0400-2100 / W:0500-2200", "VAR", "-"],
+        ["LSZH", "EDDF", "ALTN", "4", "-", "S:0300-2100 / W:0400-2200", "VAR", "-"],
+        ["LOWW", "LOWW", "DEST", "-", "-", "24H", "YOK", "-"],
+        ["LOWW", "LOWL", "ALTN", "1", "-", "VAR", "VAR", "-"],
+        ["LOWW", "LHBP", "ALTN", "2", "-", "24H", "YOK", "-"],
+        ["LOWW", "LKPR", "ALTN", "3", "-", "24H", "YOK", "-"],
+        ["LOWW", "LZIB", "ALTN", "4", "-", "24H", "YOK", "-"],
+        ["LEMD", "LEMD", "DEST", "-", "-", "24H", "YOK", "-"],
+        ["LEMD", "LEBL", "ALTN", "1", "-", "24H", "YOK", "-"],
+        ["LEMD", "LEVC", "ALTN", "2", "-", "24H", "YOK", "-"]
+    ];
+
+    function filterTable() {
+        const input = document.getElementById("icaoSearch").value.toUpperCase();
+        const tbody = document.getElementById("tableContent");
+        tbody.innerHTML = "";
+
+        if (input.length < 2) return;
+
+        const filtered = rawData.filter(row => row[0] === input);
+
+        if (filtered.length > 0) {
+            filtered.forEach(data => {
+                const tr = document.createElement("tr");
+                if (data[2] === "DEST") tr.className = "dest-row";
+                
+                data.forEach((cell, index) => {
+                    const td = document.createElement("td");
+                    if (index === 3 && cell !== "-") {
+                        td.innerHTML = `<span class="prio-tag">${cell}</span>`;
+                    } else {
+                        td.textContent = cell;
+                    }
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+        } else {
+            tbody.innerHTML = `<tr><td colspan="8" class="no-data">ICAO NOT FOUND IN MATRIX</td></tr>`;
+        }
+    }
+</script>
+
+</body>
+</html>
